@@ -1,13 +1,15 @@
 from scipy.stats import mannwhitneyu
-import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 from sklearn.preprocessing import StandardScaler
 from sklearn.cluster import SpectralClustering
+from sklearn.metrics import silhouette_score, davies_bouldin_score
 import umap
-from sklearn.metrics import silhouette_score,davies_bouldin_score
-import seaborn as sns
-from matplotlib.colors import ListedColormap
+from pathlib import Path
+
+import consts as consts
+from consensus import perform_consensus_clustering
+from plotter import plot_cdf_cc, plot_change_area_under_cdf, plot_auc_cdf, plot_hist_density_cc, plot_clustermap
 
 import logging
 import coloredlogs
@@ -15,88 +17,61 @@ import coloredlogs
 logger = logging.getLogger(__name__)
 coloredlogs.install(level='DEBUG', logger=logger)
 
-Base = pd.read_excel('data/Complete_database.xlsx', index_col=0)
-Base = Base.drop([12,18,23,24],axis=0)
 
-X = Base[Base['Fibromialgia'] == 1]
+def find_number_clusters() -> list:
+    list_sc = []
+    list_dbi = []
+
+    names = ['Silhouette score', 'Davies_Bouldin index']
+
+    for num_clusters in [2, 3, 4, 5]:
+        spectral_model = SpectralClustering(random_state=2, n_neighbors=5, affinity='nearest_neighbors',
+                                            n_clusters=num_clusters)
+        labels_rbf = spectral_model.fit_predict(embedding)
+        list_sc.append(silhouette_score(embedding, labels_rbf))
+        list_dbi.append(davies_bouldin_score(embedding, labels_rbf))
+
+    cvi = [list_sc, list_dbi]
+
+    return cvi
+
+
+def normalize_data(df_data: pd.DataFrame) -> pd.DataFrame:
+    # Normalize data
+    df_data_normalized = StandardScaler().fit_transform(df_data)
+    return df_data_normalized
+
+
+# Load data with features extracted
+path_dataset = str(Path.joinpath(consts.PATH_PROJECT_DATA, 'Complete_database_{}.xlsx'.format('fibro')))
+df_data = pd.read_excel(path_dataset, index_col=0)
+
+# Remove patients with missing data in the acquisition data procedure
+df_data = df_data.drop([12, 18, 23, 24], axis=0)
+
+X = df_data[df_data['Fibromialgia'] == 1]
 X = X.drop(['Fibromialgia', 'Pulf'], axis=1)
-X = StandardScaler().fit_transform(X)
 
-reducer = umap.UMAP(n_neighbors=3, n_components=2, min_dist=0.01, random_state=0)
-embedding= reducer.fit_transform(X)
-ss = []
-ch = []
+# Normalize data
+df_data_normalized = normalize_data(X)
 
-names=['Silhouette score','Davies_Bouldin index']
+# Perform feature reduction using the graph-based and local method UMAP
+umap_reducer = umap.UMAP(n_neighbors=3, n_components=2, min_dist=0.01, random_state=0)
+embedding = umap_reducer.fit_transform(df_data_normalized)
 
-for e in [2, 3, 4, 5]:
-    spectral_model= SpectralClustering(random_state=2, n_neighbors=5, affinity='nearest_neighbors', n_clusters=e)
-    labels_rbf = spectral_model.fit_predict(embedding)
-    ss.append(silhouette_score(embedding, labels_rbf))
-    ch.append(davies_bouldin_score(embedding, labels_rbf))
+# Perform consensus clustering with different clustering methods
+cc_obj = perform_consensus_clustering(embedding, clust_name='spectral')
+plot_cdf_cc(cc_obj)
+plot_change_area_under_cdf(cc_obj)
+plot_auc_cdf(cc_obj)
+plot_hist_density_cc(cc_obj)
+plot_clustermap(cc_obj, n_clusters=2)
 
-cvi=[ss,ch]
-figure, axis = plt.subplots(1, 1)
-figure.set_size_inches(12, 7)
-plt.plot(np.arange(2,6,1), cvi[0])
-plt.ylabel('Silhouette score',fontsize=23)
-plt.xticks(fontsize=20)
-plt.yticks(fontsize=20)
-plt.xlabel('Number of clusters',fontsize=23)
-plt.savefig('Figures/sh.png',bbox_inches='tight')
-plt.close()
 
-figure, axis = plt.subplots(1, 1)
-figure.set_size_inches(12, 7)
-plt.plot(np.arange(2,6,1), cvi[1])
-plt.ylabel('Davies_Bouldin index',fontsize=23)
-plt.xticks(fontsize=20)
-plt.yticks(fontsize=20)
-plt.xlabel('Number of clusters',fontsize=23)
-plt.savefig('Figures/db.png',bbox_inches='tight')
-plt.close()
-
-# ## Unsupervised learning (UMAP + spectral clustering)
-
-colors=ListedColormap(['red','blue'])
-clusterable_embedding = umap.UMAP(n_neighbors=3 ,n_components=2,min_dist=0.01,random_state=0).fit_transform(X)
-spectral_model= SpectralClustering(random_state=0,n_neighbors=5, affinity='nearest_neighbors', n_clusters=2)
-labels_rbf = spectral_model.fit_predict(clusterable_embedding)
-fig = plt.figure(figsize=(10, 8))
-
-scatter=plt.scatter(clusterable_embedding[:, 0], clusterable_embedding[:, 1],
-            c=labels_rbf, s=20, cmap=colors)
-plt.xticks(fontname='serif', fontsize=16)
-plt.yticks(fontname='serif', fontsize=16)
-legend=plt.legend(handles=scatter.legend_elements()[0],labels=['FM Group 0','FM Group 1'],fontsize=20)
-
-legend._legend_box.width = 250
-plt.xlabel('UMAP_1', fontname='serif', fontsize=17)
-plt.ylabel('UMAP_2', fontname='serif', fontsize=17)
-plt.savefig('Figures/FM groups.png',bbox_inches='tight')
-plt.close()
-Fibro=Base[Base['Fibromialgia']==1]
-Fibro['cluster_label']=labels_rbf
-Fibro.to_csv('FM groups.csv',index=False)
-
-#check differences between clusters
-
-Fibro= pd.read_csv('FM groups.csv')
-Fibro= Fibro.drop(['Fibromialgia','Pulf'],axis=1)
-names= Fibro.drop(['cluster_label'],axis=1)
-names= list(names.columns)
-values_0_1=[]
-for i in names:
-    z_statistic, p_value = mannwhitneyu(Fibro[Fibro.cluster_label==0][i],Fibro[Fibro.cluster_label==1][i])
-    print("The p value for the parameter",i,"is",p_value)
-    if p_value < 0.05:
-        print("We can reject the null hypothesis in the attribute ",i)
-        values_0_1.append(i)
-    else:
-        print("We can not reject the null hypothesis in the attribute ",i)
-
-for e in values_0_1:
-    print(Fibro[[e,'cluster_label']].groupby('cluster_label').agg({'mean','count','std'}).round(3))
+# Unsupervised learning (UMAP + spectral clustering)
+# clusterable_embedding = umap.UMAP(n_neighbors=3, n_components=2, min_dist=0.01, random_state=0).fit_transform(X)
+# spectral_model = SpectralClustering(random_state=0, n_neighbors=5, affinity='nearest_neighbors', n_clusters=2)
+# labels_rbf = spectral_model.fit_predict(clusterable_embedding)
 
 
 
