@@ -23,7 +23,8 @@ def perform_consensus_clustering(m_data: np.array,
                                  clust_name: str = 'ahc',
                                  min_clusters: int = 2,
                                  max_clusters: int = 10,
-                                 n_resamples: int = 1000):
+                                 n_resamples: int = 2000,
+                                 n_jobs: int = 1):
 
     clustering_obj = select_clustering_method(clust_name)
 
@@ -32,11 +33,11 @@ def perform_consensus_clustering(m_data: np.array,
         min_clusters=min_clusters,
         max_clusters=max_clusters,
         n_resamples=n_resamples,
-        resample_frac=0.8,
+        resample_frac=0.6,
         k_param='n_clusters'
     )
 
-    cc.fit(m_data, progress_bar=True)
+    cc.fit(m_data, progress_bar=True, n_jobs=n_jobs)
 
     return cc
 
