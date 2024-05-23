@@ -9,24 +9,32 @@ from sklearn.metrics import silhouette_score,davies_bouldin_score
 import seaborn as sns
 from matplotlib.colors import ListedColormap
 
+import logging
+import coloredlogs
 
-## Unsupervised learning (UMAP + sh+ db)
+logger = logging.getLogger(__name__)
+coloredlogs.install(level='DEBUG', logger=logger)
 
-Base= pd.read_excel('Complete_database.xlsx',index_col=0)
-Base=Base.drop([12,18,23,24],axis=0)
-X=Base[Base['Fibromialgia']==1]
-X= X.drop(['Fibromialgia','Pulf'],axis=1)
-X=StandardScaler().fit_transform(X)
-reducer = umap.UMAP(n_neighbors=3 ,n_components=2,min_dist=0.01,random_state=0)
+Base = pd.read_excel('data/Complete_database.xlsx', index_col=0)
+Base = Base.drop([12,18,23,24],axis=0)
+
+X = Base[Base['Fibromialgia'] == 1]
+X = X.drop(['Fibromialgia', 'Pulf'], axis=1)
+X = StandardScaler().fit_transform(X)
+
+reducer = umap.UMAP(n_neighbors=3, n_components=2, min_dist=0.01, random_state=0)
 embedding= reducer.fit_transform(X)
-ss=[]
-ch=[]
+ss = []
+ch = []
+
 names=['Silhouette score','Davies_Bouldin index']
-for e in [2,3,4,5]:
-    spectral_model= SpectralClustering(random_state=2,n_neighbors=5, affinity='nearest_neighbors', n_clusters=e)
+
+for e in [2, 3, 4, 5]:
+    spectral_model= SpectralClustering(random_state=2, n_neighbors=5, affinity='nearest_neighbors', n_clusters=e)
     labels_rbf = spectral_model.fit_predict(embedding)
     ss.append(silhouette_score(embedding, labels_rbf))
     ch.append(davies_bouldin_score(embedding, labels_rbf))
+
 cvi=[ss,ch]
 figure, axis = plt.subplots(1, 1)
 figure.set_size_inches(12, 7)
