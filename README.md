@@ -18,10 +18,16 @@ pip install -r requirements.txt
 
 To replicate the results, download data and put them into folder **data** folder. Specifically: 
 
+## Preprocessing and Feature Extraction
+
+The steps followed to preprocess the data and to extract features from the database are detailed in `features_extraction.ipynb`. However, due to privacy concerns, the data used in this project cannot be shared to protect the privacy and confidentiality of the participants involved.
+
+
 ## To obtain different results of data-driven models
 
 To perform consensus clustering:
 ```console
 python src/detect_groups.py
 ```
+
 
