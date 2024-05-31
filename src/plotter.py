@@ -1,3 +1,4 @@
+import os
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -7,59 +8,83 @@ from consensusclustering import ConsensusClustering
 
 import consts as consts
 
-# figure, axis = plt.subplots(1, 1)
-# figure.set_size_inches(12, 7)
-# plt.plot(np.arange(2, 6, 1), cvi[0])
-# plt.ylabel('Silhouette score', fontsize=23)
-# plt.xticks(fontsize=20)
-# plt.yticks(fontsize=20)
-# plt.xlabel('Number of clusters', fontsize=23)
-# plt.savefig('Figures/sh.png', bbox_inches='tight')
-# plt.close()
-#
-# figure, axis = plt.subplots(1, 1)
-# figure.set_size_inches(12, 7)
-# plt.plot(np.arange(2,6,1), cvi[1])
-# plt.ylabel('Davies_Bouldin index',fontsize=23)
-# plt.xticks(fontsize=20)
-# plt.yticks(fontsize=20)
-# plt.xlabel('Number of clusters', fontsize=23)
-# plt.savefig('Figures/db.png', bbox_inches='tight')
-# plt.close()
-#
+
+def plot_cvi_curve(list_cvi_values: list, cvi_name: str, save_figure: bool = False):
+
+    figure, axis = plt.subplots(1, 1)
+    figure.set_size_inches(12, 7)
+    plt.plot(np.arange(2, 6, 1), list_cvi_values)
+    plt.ylabel(cvi_name, fontsize=15)
+    plt.xticks(fontsize=18)
+    plt.yticks(fontsize=18)
+    plt.xlabel('Number of clusters', fontsize=18)
+
+    plt.tight_layout()
+
+    if save_figure:
+        plt.savefig(os.path.join(consts.PATH_PROJECT_FIGURES, 'plot_cvi_{}.pdf'.format(cvi_name)))
+    else:
+        plt.show()
+
+    plt.close()
 
 
-def plot_cdf_cc(cc_obj: ConsensusClustering):
-    _, ax = plt.subplots(figsize=(3.5, 3.5))
+def plot_cdf_cc(cc_obj: ConsensusClustering, best_n_clusters: int, save_figure: bool = False):
+    _, ax = plt.subplots(figsize=(8, 5))
     cc_obj.plot_cdf(ax=ax)
     ax.legend(bbox_to_anchor=(1, 1))
-    plt.show()
+
+    plt.tight_layout()
+
+    if save_figure:
+        plt.savefig(os.path.join(consts.PATH_PROJECT_FIGURES, 'plot_cdf_cc_{}.pdf'.format(best_n_clusters)))
+        plt.close()
+    else:
+        plt.show()
 
 
-def plot_change_area_under_cdf(cc_obj: ConsensusClustering):
+def plot_change_area_under_cdf(cc_obj: ConsensusClustering, best_n_clusters: int, save_figure: bool = False):
     _, ax = plt.subplots(figsize=(5, 3.5))
     cc_obj.plot_change_area_under_cdf(ax=ax)
-    plt.show()
-
     cc_obj.best_k('change_in_auc')
 
+    plt.tight_layout()
 
-def plot_auc_cdf(cc_obj: ConsensusClustering):
+    if save_figure:
+        plt.savefig(os.path.join(consts.PATH_PROJECT_FIGURES, 'plot_change_auc_cdf_{}.pdf'.format(best_n_clusters)))
+        plt.close()
+    else:
+        plt.show()
+
+
+def plot_auc_cdf(cc_obj: ConsensusClustering, best_n_clusters: int, save_figure: bool = False):
     cc_obj.plot_auc_cdf()
-    plt.show()
+    plt.tight_layout()
+
+    if save_figure:
+        plt.savefig(os.path.join(consts.PATH_PROJECT_FIGURES, 'plot_auc_cdf_{}.pdf'.format(best_n_clusters)))
+        plt.close()
+    else:
+        plt.show()
 
 
-def plot_hist_density_cc(cc_obj: ConsensusClustering, best_n_clusters: int):
+def plot_hist_density_cc(cc_obj: ConsensusClustering, best_n_clusters: int, save_figure: bool = False):
 
     _, axes = plt.subplots(1, best_n_clusters, figsize=(12, 3.5))
     for i, ax in enumerate(axes):
         cc_obj.plot_hist(i + 2, ax=ax)
         ax.set_title(i + 2)
 
-    plt.show()
+    plt.tight_layout()
+
+    if save_figure:
+        plt.savefig(os.path.join(consts.PATH_PROJECT_FIGURES, 'plot_hist_density_{}.pdf'.format(best_n_clusters)))
+        plt.close()
+    else:
+        plt.show()
 
 
-def plot_clustermap(cc_obj: ConsensusClustering, n_clusters: int, figsize=(5, 5)):
+def plot_clustermap(cc_obj: ConsensusClustering, n_clusters: int, figsize=(5, 5), save_figure: bool = False):
 
     grid = cc_obj.plot_clustermap(
         k=n_clusters,
@@ -68,8 +93,15 @@ def plot_clustermap(cc_obj: ConsensusClustering, n_clusters: int, figsize=(5, 5)
         xticklabels=False,
         yticklabels=False
     )
-    grid.cax.set_visible(False)
-    plt.show()
+    grid.cax.set_visible(True)
+
+    plt.tight_layout()
+
+    if save_figure:
+        plt.savefig(os.path.join(consts.PATH_PROJECT_FIGURES, 'cluster_map_{}.pdf'.format(n_clusters)))
+        plt.close()
+    else:
+        plt.show()
 
 
 def plot_umap_projections_with_cluster_label(clusterable_embedding: np.matrix, labels_rbf: np.matrix):
