@@ -23,12 +23,10 @@ def load_dataset():
     # Remove patients with missing data in the acquisition data procedure
     df_data = df_data.drop([12, 18, 23, 24], axis=0)
 
-    X = df_data[df_data['Fibromialgia'] == 1]
-    # X = X.drop(['Fibromialgia', 'Pulf'], axis=1)
-    X = X.drop(['Fibromialgia', 'Pulf', 'Ortostatismo'], axis=1)
-    # X = X.drop(['Fibromialgia', 'Pulf', 'Ortostatismo', 'Sexo'], axis=1)
+    # X = df_data[df_data['Fibromialgia'] == 1]
+    # X = X.drop(['Fibromialgia', 'Pulf', 'Ortostatismo'], axis=1)
 
-    print(X.head())
-    print(X.shape)
+    print(df_data.head())
+    print(df_data.shape)
 
-    return X
+    return df_data

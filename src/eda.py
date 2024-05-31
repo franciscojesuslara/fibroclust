@@ -28,6 +28,7 @@ Fibro= Fibro.drop(['Fibromialgia', 'Pulf'], axis=1)
 names= Fibro.drop(['cluster_label'], axis=1)
 names= list(names.columns)
 values_0_1=[]
+
 for i in names:
     z_statistic, p_value = mannwhitneyu(Fibro[Fibro.cluster_label==0][i],Fibro[Fibro.cluster_label==1][i])
     print("The p value for the parameter",i,"is",p_value)

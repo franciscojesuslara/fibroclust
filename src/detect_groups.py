@@ -58,6 +58,8 @@ args = parse_arguments(cmd_parser)
 
 # Load and normalize data
 X = load_dataset()
+X = X[X['Fibromialgia'] == 1]
+X = X.drop(['Fibromialgia', 'Pulf', 'Ortostatismo'], axis=1)
 df_data_normalized = normalize_data(X, type_normalization=args.normalization)
 
 # Perform consensus clustering algorithm
