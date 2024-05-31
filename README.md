@@ -25,3 +25,4 @@ To perform consensus clustering:
 python src/detect_groups.py
 ```
 
+Due to privacy concerns, the data used in this project cannot be shared to protect the privacy and confidentiality of the participants involved.
